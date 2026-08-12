@@ -77,7 +77,7 @@ export default function UploadReports() {
 
         setStepMsg("Predicting wait times with LightGBM & finding best provider...");
         setTimeout(() => {
-          nav("/patient/ai-analysis");
+          nav("/patient/best-match");
         }, 500);
       } else {
         toast.error("Extraction failed. Please check document formatting.");

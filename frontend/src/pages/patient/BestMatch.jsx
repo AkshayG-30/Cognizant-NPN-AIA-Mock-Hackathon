@@ -22,12 +22,16 @@ import {
   ShieldCheck,
   ChevronRight,
   Loader2,
-  Stethoscope
+  Stethoscope,
+  Car,
+  Navigation
 } from "lucide-react";
+import { SpecialistMap } from "@/components/SpecialistMap";
 
 export default function BestMatch() {
   const [data, setData] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const [patientLoc, setPatientLoc] = useState({ latitude: 34.0522, longitude: -118.2437, label: "Current Patient Location" });
   const [selectedSlot, setSelectedSlot] = useState("10:00 AM");
   const [selectedDate, setSelectedDate] = useState("");
   const [bookingBusy, setBookingBusy] = useState(false);
@@ -43,6 +47,9 @@ export default function BestMatch() {
       const stored = localStorage.getItem("cp_carepath_result");
       if (stored) {
         const parsed = JSON.parse(stored);
+        if (parsed.patient_location) {
+          setPatientLoc(parsed.patient_location);
+        }
         if (parsed.recommendations && parsed.recommendations.length > 0) {
           const top = parsed.recommendations[0];
           setReferralId(parsed.referral_id || null);
@@ -56,6 +63,12 @@ export default function BestMatch() {
               hospital: top.hospital,
               quality: top.quality_score || 96,
               distance_km: top.distance_km || 14.0,
+              haversine_distance_km: top.haversine_distance_km || top.distance_km || 14.0,
+              osrm: top.osrm,
+              osrm_distance_km: top.osrm_distance_km || top.osrm?.distance_km,
+              osrm_duration_minutes: top.osrm_duration_minutes || top.osrm?.duration_minutes,
+              latitude: top.latitude,
+              longitude: top.longitude,
               wait_days: top.predicted_wait_days || 10.0,
               next_available: top.next_available || "Within 7 days",
               match_score: top.match_score || 96,
@@ -79,7 +92,31 @@ export default function BestMatch() {
     if (!loadedFromStorage) {
       api.get("/carepath/best-match")
         .then((r) => {
+          if (r.data?.patient_location) {
+            setPatientLoc(r.data.patient_location);
+          }
           setData(r.data);
+          if (r.data?.recommendations && r.data.recommendations.length > 0) {
+            setRecommendations(r.data.recommendations);
+          } else if (r.data?.doctor) {
+            setRecommendations([
+              {
+                rank: 1,
+                provider_id: r.data.doctor.id,
+                name: r.data.doctor.name,
+                specialty: r.data.specialty,
+                hospital: r.data.doctor.hospital,
+                latitude: r.data.doctor.latitude || 34.0736,
+                longitude: r.data.doctor.longitude || -118.3775,
+                distance_km: r.data.doctor.distance_km,
+                haversine_distance_km: r.data.doctor.haversine_distance_km || r.data.doctor.distance_km,
+                predicted_wait_days: r.data.doctor.wait_days,
+                quality_score: r.data.doctor.quality,
+                match_score: 97,
+                osrm: r.data.doctor.osrm,
+              }
+            ]);
+          }
           setSelectedDate(todayStr);
         })
         .catch(() => {});
@@ -87,7 +124,11 @@ export default function BestMatch() {
   }, []);
 
   async function handleBook(doctorId, customDate = null, customTime = null) {
-    const docId = doctorId || data?.doctor?.id;
+    const chosenDoc = (recommendations || []).find(
+      (r) => String(r.provider_id || r.id) === String(doctorId)
+    ) || (doctorId === data?.doctor?.id ? data?.doctor : null) || recommendations[0];
+
+    const docId = doctorId || chosenDoc?.provider_id || chosenDoc?.id || data?.doctor?.id;
     if (!docId) {
       toast.error("Invalid provider selected");
       return;
@@ -101,10 +142,13 @@ export default function BestMatch() {
       const res = await api.post("/carepath/book", {
         provider_id: docId,
         doctor_id: docId,
+        doctor_name: chosenDoc?.name || data?.doctor?.name,
+        specialty: chosenDoc?.specialty || data?.specialty,
+        hospital: chosenDoc?.hospital || data?.doctor?.hospital,
         date: dateToBook,
         time: timeToBook,
         referral_id: referralId,
-        reason: `CarePath Consultation for ${data?.specialty || "Specialist Care"}`,
+        reason: `CarePath Consultation for ${chosenDoc?.specialty || data?.specialty || "Specialist Care"}`,
       });
 
       const respData = res.data;
@@ -207,9 +251,19 @@ export default function BestMatch() {
           {/* Core Metrics */}
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Stat icon={Award} label="Quality Score" value={`${d.quality}/100`} color="text-amber-700" />
-            <Stat icon={MapPin} label="Travel Distance" value={`${d.distance_km} km`} color="text-slate-800" />
+            <Stat
+              icon={MapPin}
+              label="Haversine Distance"
+              value={`${d.haversine_distance_km || d.distance_km} km`}
+              color="text-slate-800"
+            />
+            <Stat
+              icon={Car}
+              label="OSRM Driving Route"
+              value={d.osrm_distance_km ? `${d.osrm_distance_km} km (${d.osrm_duration_minutes}m)` : `${d.distance_km} km`}
+              color="text-blue-700"
+            />
             <Stat icon={TimerReset} label="ML Predicted Wait" value={`${d.wait_days} days`} color="text-emerald-700" />
-            <Stat icon={Calendar} label="Next Available" value={d.next_available} color="text-blue-700" />
           </div>
 
           {/* Interactive Fast Booking Box */}
@@ -309,6 +363,11 @@ export default function BestMatch() {
         </Card>
       </div>
 
+      {/* OSRM Driving Route & Patient-Specialist Interactive Map */}
+      <div className="pt-2">
+        <SpecialistMap patientLocation={patientLoc} specialists={recommendations} />
+      </div>
+
       {/* Alternative Ranked Specialists */}
       {altDoctors.length > 0 && (
         <div className="space-y-3 pt-2">
@@ -332,8 +391,13 @@ export default function BestMatch() {
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg">
                   <div>
-                    <span className="text-[10px] text-slate-500 block">Distance</span>
-                    <span className="font-medium text-slate-900">{doc.distance_km} km</span>
+                    <span className="text-[10px] text-slate-500 block">Road / Straight</span>
+                    <span className="font-medium text-slate-900">
+                      {doc.osrm_distance_km ? `${doc.osrm_distance_km} km` : `${doc.distance_km} km`}
+                    </span>
+                    {doc.osrm_duration_minutes && (
+                      <span className="text-[10px] text-blue-600 block font-semibold">🚗 {doc.osrm_duration_minutes}m</span>
+                    )}
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 block">Wait Time</span>

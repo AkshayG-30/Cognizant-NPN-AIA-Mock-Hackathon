@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://carepath:carepath_dev@localhost:5432/carepath_db"
     database_sync_url: str = "postgresql+psycopg2://carepath:carepath_dev@localhost:5432/carepath_db"
 
+    # ── Routing Service ──────────────────────────────────────
+    osrm_base_url: str = "https://router.project-osrm.org"
+
     # ── ML Model ─────────────────────────────────────────────
     wait_model_path: str = "../models/artifacts/wait_time_lgbm.txt"
     wait_model_version: str = "v001"

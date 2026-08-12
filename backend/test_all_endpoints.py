@@ -24,7 +24,7 @@ async def run_tests():
         print("\n2. Testing Auth Login...")
         r = await client.post(
             f"{BASE_URL}/auth/login",
-            json={"email": "patient@carepath.ai", "password": "anypassword"},
+            json={"email": "patient@carepath.ai", "password": "password123"},
         )
         assert r.status_code == 200, f"Auth login failed: {r.text}"
         auth_data = r.json()

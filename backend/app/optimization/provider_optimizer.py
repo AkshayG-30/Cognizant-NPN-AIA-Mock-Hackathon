@@ -162,9 +162,15 @@ class ProviderOptimizer:
 
             scored_candidates.append({
                 "provider_id": c["provider_id"],
-                "provider_name": c.get("name"),
+                "name": c.get("name") or c.get("provider_name"),
+                "provider_name": c.get("name") or c.get("provider_name"),
                 "provider_npi": c.get("npi"),
                 "specialty": c.get("specialty"),
+                "city": c.get("city"),
+                "state": c.get("state"),
+                "latitude": c.get("latitude"),
+                "longitude": c.get("longitude"),
+                "offers_telehealth": c.get("offers_telehealth"),
                 "predicted_wait_days": c.get("predicted_wait_days"),
                 "distance_km": c.get("distance_km"),
                 "capacity_score": round(cap_scores[i], 3),

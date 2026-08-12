@@ -215,24 +215,32 @@ async def generate_appointment_document(
     try:
         if appointment_id != "appt_demo_01":
             appt_uuid = UUID(appointment_id)
-            result = await db.execute(
-                select(Appointment, Provider, Organization.name.label("org_name"))
-                .join(Provider, Appointment.provider_id == Provider.id)
-                .outerjoin(Organization, Provider.organization_id == Organization.id)
-                .where(Appointment.id == appt_uuid)
-            )
-            row = result.first()
-            if row:
-                appt, prov, org_name = row[0], row[1], row[2]
-                doc_name = f"Dr. {prov.first_name.title()} {prov.last_name.title()}"
-                if prov.credential:
-                    doc_name += f", {prov.credential}"
-                specialty = prov.specialty or specialty
-                hospital = f"{org_name or 'Medical Center'}, {prov.city or 'Los Angeles'}, {prov.state or 'CA'}"
+            appt = await db.get(Appointment, appt_uuid)
+            if appt:
                 scheduled_date_str = appt.scheduled_date.strftime("%B %d, %Y") if appt.scheduled_date else scheduled_date_str
                 scheduled_time_str = appt.scheduled_time or scheduled_time_str
                 status_str = (appt.status.value if hasattr(appt.status, "value") else str(appt.status)).upper()
                 notes_str = appt.notes or notes_str
+
+                if appt.provider_id:
+                    prov = await db.get(Provider, appt.provider_id)
+                    if prov and prov.first_name.lower() != "specialist":
+                        doc_name = f"Dr. {prov.first_name.title()} {prov.last_name.title()}"
+                        if prov.credential:
+                            doc_name += f", {prov.credential}"
+                        specialty = prov.specialty or specialty
+                        hospital = f"{prov.city or 'Los Angeles'} Medical Center, {prov.state or 'CA'}"
+
+                if "|" in notes_str:
+                    parts = [p.strip() for p in notes_str.split("|")]
+                    for p in parts:
+                        if p.startswith("Doctor:"):
+                            doc_name = p.replace("Doctor:", "").strip()
+                        elif p.startswith("Specialty:"):
+                            specialty = p.replace("Specialty:", "").strip()
+                        elif p.startswith("Hospital:"):
+                            hospital = p.replace("Hospital:", "").strip()
+                    notes_str = parts[0]
     except Exception:
         pass
 
