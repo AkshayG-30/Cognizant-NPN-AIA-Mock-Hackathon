@@ -98,7 +98,7 @@ For testing, pre-seeded demo accounts are automatically initialized:
 | :--- | :--- | :--- |
 | **Patient** | `patient@carepath.ai` | `Patient@2026` |
 | **Doctor** | `sarah.williams@carepath.ai` | `Doctor@2026` |
-| **Admin** | `soniyaezhumalaisoniya@gmail.com` | `CarePath@2026` |
+| **Admin** | `admin@carepath.ai` | `Admin@2026` |
 
 ---
 

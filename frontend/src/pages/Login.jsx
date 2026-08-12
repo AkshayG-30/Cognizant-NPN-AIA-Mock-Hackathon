@@ -239,7 +239,7 @@ export default function Login() {
               </button>
               <button
                 type="button"
-                onClick={() => fillDemo("soniyaezhumalaisoniya@gmail.com", "CarePath@2026")}
+                onClick={() => fillDemo("admin@carepath.ai", "Admin@2026")}
                 className="flex items-center justify-center gap-1 px-2 py-1.5 rounded text-[11px] font-medium bg-white border border-slate-200 hover:bg-purple-50 hover:border-purple-200 text-slate-700 transition-colors"
               >
                 <Shield className="w-3 h-3 text-purple-600" /> Admin

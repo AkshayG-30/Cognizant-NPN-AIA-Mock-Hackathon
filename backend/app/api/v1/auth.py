@@ -36,10 +36,10 @@ DEMO_CREDENTIALS = {
         "role": "doctor",
         "password": "Doctor@2026",
     },
-    "soniyaezhumalaisoniya@gmail.com": {
-        "name": "Soniya Admin",
+    "admin@carepath.ai": {
+        "name": "System Admin",
         "role": "admin",
-        "password": "CarePath@2026",
+        "password": "Admin@2026",
     },
 }
 
