@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: carepath-db
+    environment:
+      POSTGRES_USER: carepath
+      POSTGRES_PASSWORD: carepath_dev
+      POSTGRES_DB: carepath_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carepath -d carepath_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carepath-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://carepath:carepath_dev@postgres:5432/carepath_db
+      - DATABASE_SYNC_URL=postgresql+psycopg2://carepath:carepath_dev@postgres:5432/carepath_db
+      - WAIT_MODEL_PATH=/app/models/artifacts/wait_time_lgbm.txt
+      - FEATURE_COLUMNS_PATH=/app/models/artifacts/feature_columns.json
+      - SPECIALTY_ENCODER_PATH=/app/models/artifacts/specialty_encoder.json
+      - SPECIALTY_PARAMS_PATH=/app/models/artifacts/specialty_params.json
+      - MASTER_DATASET_DIR=/app/datasets/master
+    volumes:
+      - ../models/artifacts:/app/models/artifacts:ro
+      - ../Datasets/master:/app/datasets/master:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,152 @@
+"""
+CarePath AI — Medical Specialty Taxonomy & Normalization Map
+Maps clinical specialty aliases, subspecialties, and ICD/clinical terms
+to CMS DAC standard taxonomy and LightGBM model encoder labels.
+"""
+from __future__ import annotations
+
+# Canonical CMS DAC / Model-trained specialties
+CANONICAL_SPECIALTIES = [
+    "ANESTHESIOLOGY",
+    "CARDIOVASCULAR DISEASE",
+    "CERTIFIED REGISTERED NURSE ANESTHETIST",
+    "CHIROPRACTIC",
+    "CLINICAL PSYCHOLOGIST",
+    "CLINICAL SOCIAL WORKER",
+    "DERMATOLOGY",
+    "DIAGNOSTIC RADIOLOGY",
+    "EMERGENCY MEDICINE",
+    "FAMILY PRACTICE",
+    "GASTROENTEROLOGY",
+    "GENERAL SURGERY",
+    "HOSPITALIST",
+    "INTERNAL MEDICINE",
+    "MENTAL HEALTH COUNSELOR",
+    "NEPHROLOGY",
+    "NEUROLOGY",
+    "NURSE PRACTITIONER",
+    "OBSTETRICS/GYNECOLOGY",
+    "OCCUPATIONAL THERAPIST IN PRIVATE PRACTICE",
+    "OPHTHALMOLOGY",
+    "OPTOMETRY",
+    "ORTHOPEDIC SURGERY",
+    "PATHOLOGY",
+    "PHYSICAL THERAPIST IN PRIVATE PRACTICE",
+    "PHYSICIAN ASSISTANT",
+    "PODIATRY",
+    "PSYCHIATRY",
+    "PULMONARY DISEASE",
+    "UROLOGY",
+]
+
+# Clinical aliases / synonyms -> Canonical specialty
+SPECIALTY_SYNONYMS: dict[str, str] = {
+    # Cardiovascular
+    "CARDIOLOGY": "CARDIOVASCULAR DISEASE",
+    "CARDIOLOGIST": "CARDIOVASCULAR DISEASE",
+    "CARDIAC": "CARDIOVASCULAR DISEASE",
+    "CARDIOVASCULAR": "CARDIOVASCULAR DISEASE",
+    "CARDIAC ELECTROPHYSIOLOGY": "CARDIOVASCULAR DISEASE",
+    "ADVANCED HEART FAILURE": "CARDIOVASCULAR DISEASE",
+    "INTERVENTIONAL CARDIOLOGY": "CARDIOVASCULAR DISEASE",
+    "VASCULAR SURGERY": "GENERAL SURGERY",
+    "CARDIOTHORACIC SURGERY": "GENERAL SURGERY",
+    "CARDIAC SURGERY": "GENERAL SURGERY",
+
+    # Pulmonary
+    "PULMONOLOGY": "PULMONARY DISEASE",
+    "PULMONOLOGIST": "PULMONARY DISEASE",
+    "PULMONARY": "PULMONARY DISEASE",
+    "RESPIRATORY": "PULMONARY DISEASE",
+    "CRITICAL CARE": "PULMONARY DISEASE",
+
+    # Dermatology
+    "DERM": "DERMATOLOGY",
+    "DERMATOLOGIST": "DERMATOLOGY",
+
+    # Gastroenterology
+    "GI": "GASTROENTEROLOGY",
+    "GASTRO": "GASTROENTEROLOGY",
+    "GASTROENTEROLOGIST": "GASTROENTEROLOGY",
+    "HEPATOLOGY": "GASTROENTEROLOGY",
+
+    # Neurology
+    "NEURO": "NEUROLOGY",
+    "NEUROLOGIST": "NEUROLOGY",
+    "NEUROSURGERY": "GENERAL SURGERY",
+
+    # Orthopedics
+    "ORTHOPEDICS": "ORTHOPEDIC SURGERY",
+    "ORTHOPAEDICS": "ORTHOPEDIC SURGERY",
+    "ORTHOPEDIC": "ORTHOPEDIC SURGERY",
+    "ORTHO": "ORTHOPEDIC SURGERY",
+    "SPORTS MEDICINE": "ORTHOPEDIC SURGERY",
+
+    # Primary Care / Internal Medicine
+    "PRIMARY CARE": "INTERNAL MEDICINE",
+    "GENERAL PRACTICE": "FAMILY PRACTICE",
+    "FAMILY MEDICINE": "FAMILY PRACTICE",
+    "PCP": "INTERNAL MEDICINE",
+    "ENDOCRINOLOGY": "INTERNAL MEDICINE",
+    "ENDOCRINOLOGY, DIABETES & METABOLISM": "INTERNAL MEDICINE",
+    "DIABETES": "INTERNAL MEDICINE",
+    "RHEUMATOLOGY": "INTERNAL MEDICINE",
+    "HEMATOLOGY": "INTERNAL MEDICINE",
+    "ONCOLOGY": "INTERNAL MEDICINE",
+    "HEMATOLOGY/ONCOLOGY": "INTERNAL MEDICINE",
+    "INFECTIOUS DISEASE": "INTERNAL MEDICINE",
+    "ALLERGY": "INTERNAL MEDICINE",
+    "ALLERGY/IMMUNOLOGY": "INTERNAL MEDICINE",
+    "GERIATRIC MEDICINE": "INTERNAL MEDICINE",
+
+    # Women's Health
+    "OB/GYN": "OBSTETRICS/GYNECOLOGY",
+    "OBGYN": "OBSTETRICS/GYNECOLOGY",
+    "GYNECOLOGY": "OBSTETRICS/GYNECOLOGY",
+    "OBSTETRICS": "OBSTETRICS/GYNECOLOGY",
+    "WOMEN'S HEALTH": "OBSTETRICS/GYNECOLOGY",
+
+    # Mental Health / Psych
+    "PSYCH": "PSYCHIATRY",
+    "PSYCHOLOGIST": "CLINICAL PSYCHOLOGIST",
+    "COUNSELING": "MENTAL HEALTH COUNSELOR",
+    "THERAPY": "CLINICAL SOCIAL WORKER",
+    "BEHAVIORAL HEALTH": "PSYCHIATRY",
+
+    # Urology / Nephrology / Eyes
+    "UROLOGIST": "UROLOGY",
+    "NEPHROLOGIST": "NEPHROLOGY",
+    "KIDNEY": "NEPHROLOGY",
+    "EYE": "OPHTHALMOLOGY",
+    "OPTOMETRIST": "OPTOMETRY",
+    "ENT": "GENERAL SURGERY",
+    "OTOLARYNGOLOGY": "GENERAL SURGERY",
+}
+
+
+def normalize_specialty(specialty: str | None) -> str:
+    """Normalize user or extracted specialty string to canonical CMS DAC specialty."""
+    if not specialty:
+        return "INTERNAL MEDICINE"
+    
+    clean = str(specialty).strip().upper()
+    
+    # Direct match
+    if clean in CANONICAL_SPECIALTIES:
+        return clean
+        
+    # Synonym match
+    if clean in SPECIALTY_SYNONYMS:
+        return SPECIALTY_SYNONYMS[clean]
+        
+    # Substring search
+    for synonym, canonical in SPECIALTY_SYNONYMS.items():
+        if synonym in clean:
+            return canonical
+            
+    for canonical in CANONICAL_SPECIALTIES:
+        if canonical in clean:
+            return canonical
+
+    # Default fallback
+    return "INTERNAL MEDICINE"

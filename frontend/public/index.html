@@ -1,0 +1,116 @@
+**12345678910111213141516**
+
+**<!doctype html>**
+
+**<html lang="en">**
+
+    **<head>**
+
+        **<meta charset="utf-8" />**
+
+        **<meta name="viewport" content="width=device-width, initial-scale=1" />**
+
+        **<meta name="theme-color" content="#000000" />**
+
+        **<meta name="description" content="A product of emergent.sh" />**
+
+        **<link rel="preconnect" href="https://fonts.googleapis.com" />**
+
+        **<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />**
+
+        **<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600\&display=swap" rel="stylesheet" />**
+
+**…**
+
+
+
+**Action: execute_bash({"command":"sudo supervisorctl restart backend \&\& sleep 3 \&\& tail -n 60 /var/log/supervisor/backend.*.log"})**
+
+**Observation: backend: stopped**
+
+**backend: started**
+
+**==> /var/log/supervisor/backend.err.log <==**
+
+**INFO:     Will watch for changes in these directories: ['/app/backend']**
+
+**INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)**
+
+**INFO:     Started reloader process [51] using WatchFiles**
+
+**INFO:     Started server process [70]**
+
+**INFO:     Waiting for application startup.**
+
+**INFO:     Application startup complete.**
+
+**INFO:     Shutting down**
+
+**INFO:     Waiting for application shutdown.**
+
+**INFO:     Application shutdown complete.**
+
+**INFO:     Finished server process [70]**
+
+**INFO:     Stopping reloader process [51]**
+
+**INFO:     Will watch for changes in these directories: ['/app/backend']**
+
+**INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)**
+
+**INFO:     Started reloader process [258] using WatchFiles**
+
+**INFO:     Started server process [316]**
+
+**INFO:     Waiting for application startup.**
+
+**INFO:     Application startup complete.**
+
+**WARNING:  WatchFiles detected changes in 'server.py'. Reloading...**
+
+**INFO:     Shutting down**
+
+**INFO:     Waiting for application shutdown.**
+
+**INFO:     Application shutdown complete.**
+
+**INFO:     Finished server process [316]**
+
+**INFO:     Started server process [1142]**
+
+**INFO:     Waiting for application startup.**
+
+**INFO:     Application startup complete.**
+
+**INFO:     Shutting down**
+
+**INFO:     Waiting for application shutdown.**
+
+**INFO:     Application shutdown complete.**
+
+**INFO:     Finished server process [1142]**
+
+**INFO:     Stopping reloader process [258]**
+
+**INFO:     Will watch for changes in these directories: ['/app/backend']**
+
+**INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)**
+
+**INFO:     Started reloader process [1601] using WatchFiles**
+
+**INFO:     Started server process [1603]**
+
+**INFO:     Waiting for application startup.**
+
+**INFO:     Application startup complete.**
+
+
+
+**==> /var/log/supervisor/backend.out.log <==**
+
+**Exit code: 0**
+
+
+
+
+**{"app":"CarePath AI","status":"ok"}--- {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NmYyOWMzYy1lNDE4LTRkMDAtYjgxYy1jMDY5ZjdkNzJhNmUiLCJyb2xlIjoicGF0aWVudCIsImV4cCI6MTc4NzEyODMyNX0.NQQLuoxBHzjd2GWsEPZXujRYYtfOUGdqkmaYWZQlRcw","user":{"id":"96f29c3c-e418-4d00-b81c-c069f7d72a6e","name":"Soniya E.","email":"patient@carepath.ai","role":"patient","avatar":null,"created_at":"2026-08-12T08:24:42.235566+00:00"}} Exit code: 0**

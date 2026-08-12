@@ -1,0 +1,86 @@
+# Dependencies & Virtual Environments
+node_modules/
+venv/
+.venv/
+env/
+ENV/
+
+# Datasets & Data Files
+Datasets/
+*.csv
+*.zip
+*.parquet
+
+# Machine Learning & Build Artifacts (Only Python scripts like train_wait_time.py should be committed)
+artifacts/
+**/artifacts/
+models/artifacts/
+*.lgb
+*.txt
+*.bin
+*.pkl
+*.json
+
+# Test Sources & PDF/Image Upload Samples
+test sources/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# Project Metadata & Documentation Logs
+graphify-out/
+PROGRESS/
+
+# Python cache & build outputs
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables & secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Frontend builds
+dist/
+dist-ssr/
+*.local
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database & SQLite files
+*.sqlite
+*.sqlite3
+*.db

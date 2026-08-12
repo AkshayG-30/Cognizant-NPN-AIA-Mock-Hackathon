@@ -1,0 +1,52 @@
+# CarePath AI Backend — Dependencies
+# Core
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+pydantic==2.11.3
+pydantic-settings==2.9.1
+python-multipart==0.0.20
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+
+# Database
+sqlalchemy==2.0.41
+alembic==1.16.1
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+greenlet==3.2.3
+
+# ML
+lightgbm==4.6.0
+scikit-learn==1.7.0
+shap==0.46.0
+numpy==2.3.0
+pandas==2.3.0
+
+# Optimization
+ortools==9.12.4544
+
+# Graph
+networkx==3.5
+
+# Utilities
+httpx==0.28.1
+python-dotenv==1.1.0
+structlog==25.4.0
+pyarrow==19.0.1
+aiofiles==24.1.0
+
+# File processing
+python-docx==1.1.2
+PyPDF2==3.0.1
+
+# Testing
+pytest==8.4.1
+pytest-asyncio==1.0.0
+pytest-cov==6.2.1
+httpx==0.28.1
+
+# Linting
+ruff==0.11.13
+
+# FHIR
+fhir.resources==8.0.0
