@@ -108,9 +108,14 @@ export default function BestMatch() {
       });
 
       const respData = res.data;
+      const apptId = respData.appointment_id || "appt_demo_01";
+
       toast.success("Appointment Confirmed!", {
-        description: `Scheduled with ${respData.doctor_name || "Specialist"} on ${dateToBook} at ${timeToBook}.`,
+        description: `Scheduled with ${respData.doctor_name || "Specialist"} on ${dateToBook} at ${timeToBook}. Opening appointment document...`,
       });
+
+      // Automatically open downloadable appointment slip
+      window.open(`http://127.0.0.1:8000/api/v1/appointments/${apptId}/document?print=true`, "_blank");
 
       setTimeout(() => {
         nav("/patient/appointments");

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Calendar, MapPin, Clock, CheckCircle2, User, Stethoscope, Plus } from "lucide-react";
+import { Calendar, MapPin, Clock, CheckCircle2, User, Stethoscope, Plus, FileText } from "lucide-react";
 import { CareJourney } from "@/components/CareJourney";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
@@ -96,6 +96,18 @@ export default function Appointments({ scope = "upcoming" }) {
                   Note: {a.notes}
                 </div>
               )}
+
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">CarePath Reference Slip</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(`http://127.0.0.1:8000/api/v1/appointments/${a.id}/document?print=true`, "_blank")}
+                  className="h-8 text-xs font-semibold text-blue-700 border-blue-200 bg-blue-50/50 hover:bg-blue-100/70"
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1 text-blue-600" /> Download Document
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
