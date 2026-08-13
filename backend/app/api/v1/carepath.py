@@ -431,7 +431,21 @@ async def process_carepath_workflow(
                 "arrival_rate_lambda": 20.0,
             })
 
-    # Regional Calibration: Ensure candidate locations align with patient's metro area for accurate local routing
+    # Parse patient city and state if available
+    p_city, p_state = None, None
+    target_addr = patient_address_str or (patient_location.get("label") if isinstance(patient_location, dict) else None)
+    if target_addr:
+        if "," in target_addr:
+            parts = [p.strip() for p in target_addr.split(",") if p.strip()]
+            if len(parts) >= 2:
+                p_city = parts[-2]
+                st_parts = parts[-1].split()
+                if st_parts and len(st_parts[0]) == 2 and st_parts[0].isalpha():
+                    p_state = st_parts[0].upper()
+        else:
+            p_city = target_addr.strip().title()
+
+    # Regional Calibration: Ensure candidate locations and city/state align with patient's metro area
     from app.services.provider_service import haversine_distance
     for idx, c in enumerate(candidates):
         c_lat = c.get("latitude")
@@ -440,6 +454,10 @@ async def process_carepath_workflow(
             c["latitude"] = round(patient_lat + (0.015 * (idx + 1)), 6)
             c["longitude"] = round(patient_lon + (0.025 * (idx + 1)), 6)
             c["distance_km"] = round(haversine_distance(patient_lat, patient_lon, c["latitude"], c["longitude"]), 1)
+        if p_city:
+            c["city"] = p_city.title()
+        if p_state:
+            c["state"] = p_state
 
     # 4. LIGHTGBM QUEUE-THEORY WAIT-TIME PREDICTION
     wait_service = WaitPredictionService(db)
@@ -495,8 +513,8 @@ async def process_carepath_workflow(
         lat = rec.get("latitude") or (provider_obj.latitude if provider_obj else None) or def_lats[idx % len(def_lats)]
         lon = rec.get("longitude") or (provider_obj.longitude if provider_obj else None) or def_lons[idx % len(def_lons)]
 
-        city = rec.get("city") or (provider_obj.city.title() if (provider_obj and provider_obj.city) else "Regional Center")
-        state = rec.get("state") or (provider_obj.state if (provider_obj and provider_obj.state) else "US")
+        city = p_city.title() if p_city else (rec.get("city") or (provider_obj.city.title() if (provider_obj and provider_obj.city) else "Regional Center"))
+        state = p_state.upper() if p_state else (rec.get("state") or (provider_obj.state if (provider_obj and provider_obj.state) else "US"))
         hospital_name = f"{city} Medical Pavilion, {state}"
 
         wait_days = rec.get("predicted_wait_days")
