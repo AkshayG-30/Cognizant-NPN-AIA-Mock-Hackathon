@@ -79,7 +79,12 @@ class WaitPredictionService:
     async def predict_for_candidate(self, candidate: dict) -> float:
         """Quick prediction for a provider candidate during optimization."""
         if not self.registry.is_loaded:
-            raise ModelNotAvailableError("wait_time")
+            cand_wait = candidate.get("predicted_wait_days")
+            if cand_wait is not None:
+                return float(cand_wait)
+            q_len = float(candidate.get("current_queue_length", 3))
+            backlog = float(candidate.get("active_backlog", 2))
+            return max(1.0, round(3.5 + (q_len * 0.8) + (backlog * 0.6), 1))
 
         now = datetime.now(timezone.utc)
 

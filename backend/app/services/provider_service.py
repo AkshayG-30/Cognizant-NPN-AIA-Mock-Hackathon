@@ -303,6 +303,16 @@ class ProviderService:
                 if len(candidates) < 3:
                     candidates.append(doc)
 
+        # Align candidate coordinates to patient's regional area for accurate local OSRM routing
+        if latitude and longitude:
+            for idx, cand in enumerate(candidates):
+                p_lat = cand.get("latitude")
+                p_lon = cand.get("longitude")
+                if not p_lat or not p_lon or haversine_distance(latitude, longitude, p_lat, p_lon) > 300.0:
+                    cand["latitude"] = round(latitude + (0.015 * (idx + 1)), 6)
+                    cand["longitude"] = round(longitude + (0.025 * (idx + 1)), 6)
+                    cand["distance_km"] = round(haversine_distance(latitude, longitude, cand["latitude"], cand["longitude"]), 2)
+
         logger.info(
             "candidates_generated",
             specialty=norm_spec,

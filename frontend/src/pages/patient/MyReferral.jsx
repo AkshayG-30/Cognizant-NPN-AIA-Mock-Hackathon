@@ -18,7 +18,7 @@ export default function MyReferral() {
     symptoms: "",
     duration: "",
     urgency: "routine",
-    zip_code: "90024",
+    zip_code: "",
     notes: "",
   });
   const [file, setFile] = useState(null);
