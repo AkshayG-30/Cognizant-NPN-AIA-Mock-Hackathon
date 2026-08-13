@@ -58,7 +58,7 @@ def geocode_patient_location(query: str) -> Optional[tuple[float, float]]:
         return None
     query_str = query.strip().lower()
     
-    # Fast lookup dictionary for zip codes, cities, and countries
+    # Fast lookup dictionary for zip codes, cities, states, and countries
     known = {
         "india": (20.5937, 78.9629),
         "mumbai": (19.0760, 72.8777),
@@ -66,7 +66,14 @@ def geocode_patient_location(query: str) -> Optional[tuple[float, float]]:
         "delhi": (28.6139, 77.2090),
         "delhi, india": (28.6139, 77.2090),
         "bangalore": (12.9716, 77.5946),
+        "bengaluru": (12.9716, 77.5946),
         "chennai": (13.0827, 80.2707),
+        "chennai, tamil nadu": (13.0827, 80.2707),
+        "velachery": (12.9789, 80.2206),
+        "velachery, chennai": (12.9789, 80.2206),
+        "tamil nadu": (11.1271, 78.6569),
+        "600042": (12.9789, 80.2206),
+        "600002": (13.0645, 80.2721),
         "hyderabad": (17.3850, 78.4867),
         "kolkata": (22.5726, 88.3639),
         "pune": (18.5204, 73.8567),
@@ -80,6 +87,10 @@ def geocode_patient_location(query: str) -> Optional[tuple[float, float]]:
     
     if query_str in known:
         return known[query_str]
+
+    for k, coords in known.items():
+        if k in query_str:
+            return coords
         
     if "india" in query_str:
         return (20.5937, 78.9629)
@@ -205,6 +216,27 @@ async def process_carepath_workflow(
     extracted_text = extracted_text.strip()
     if not extracted_text:
         extracted_text = "Patient presenting for clinical evaluation and routine specialty referral consultation."
+
+    # Auto-extract patient address/city from document text if location query was not provided in request form
+    if not loc_query and extracted_text:
+        import re
+        addr_match = re.search(r"(?:Address|Location|Patient Address|Clinic Address)[:\s]+([^\n]+)", extracted_text, re.IGNORECASE)
+        if addr_match:
+            doc_addr = addr_match.group(1).strip()
+            coords = geocode_patient_location(doc_addr)
+            if coords:
+                patient_lat, patient_lon = coords
+                patient_address_str = doc_addr
+                logger.info("patient_address_extracted_from_doc", address=doc_addr, lat=patient_lat, lon=patient_lon)
+        else:
+            for city_kw in ["chennai", "mumbai", "delhi", "bangalore", "bengaluru", "hyderabad", "kolkata", "pune", "tamil nadu"]:
+                if city_kw in extracted_text.lower():
+                    coords = geocode_patient_location(city_kw)
+                    if coords:
+                        patient_lat, patient_lon = coords
+                        patient_address_str = city_kw.title()
+                        logger.info("patient_city_extracted_from_doc", city=city_kw, lat=patient_lat, lon=patient_lon)
+                        break
 
     # 2. CLINICAL NLP TRIAGE & SPECIALTY ROUTING
     detected_specialty = "CARDIOVASCULAR DISEASE"
@@ -551,7 +583,7 @@ async def process_carepath_workflow(
         "patient_location": {
             "latitude": patient_lat,
             "longitude": patient_lon,
-            "label": "Current Patient Location",
+            "label": patient_address_str or "Current Patient Location",
         },
         "recommendations": recommendation_cards,
     }

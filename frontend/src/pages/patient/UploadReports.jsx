@@ -60,9 +60,7 @@ export default function UploadReports() {
       formData.append("max_distance_km", "150");
 
       setStepMsg("Running Groq LLM clinical triage & diagnostic classification...");
-      const res = await api.post("/carepath/process", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post("/carepath/process", formData);
 
       const data = res.data;
       if (data && data.success) {

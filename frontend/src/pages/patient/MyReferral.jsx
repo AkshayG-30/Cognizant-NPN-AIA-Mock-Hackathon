@@ -59,9 +59,7 @@ export default function MyReferral() {
 
       setStepMsg("Running Groq LLM clinical triage & specialty routing...");
       
-      const res = await api.post("/carepath/process", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post("/carepath/process", formData);
 
       const data = res.data;
       if (data && data.success) {
