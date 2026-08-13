@@ -92,7 +92,44 @@ class WaitTimePredictor:
         # Build feature vector according to model's expected feature count
         num_expected = model.num_feature()
 
-        if num_expected == 12:
+        if num_expected == 26:
+            # V4 LightGBM model feature schema (26 features)
+            dow = day_of_week
+            dow_rad = 2 * np.pi * dow / 7.0
+            month_rad = 2 * np.pi * month / 12.0
+            cap7 = server_count * service_rate_mu * 7.0
+            cap14 = server_count * service_rate_mu * 14.0
+            cap30 = server_count * service_rate_mu * 30.0
+
+            features = np.array([[
+                float(arrival_rate_lambda),                         # 0: arrival_rate_1d
+                float(queue_length_Lq),                             # 1: queue_length_at_booking
+                float(queue_length_Lq / max(service_rate_mu, 0.1)),# 2: days_to_earliest_pending
+                float(queue_length_Lq / max(arrival_rate_lambda, 0.01)), # 3: queue_to_arrival_7d
+                float(active_backlog / max(queue_length_Lq, 1.0)), # 4: pending_7d_to_queue
+                float(cap7),                                        # 5: scheduled_capacity_next_7d
+                float(cap14),                                       # 6: scheduled_capacity_next_14d
+                float(cap30),                                       # 7: scheduled_capacity_next_30d
+                float((arrival_rate_lambda * 7.0) / max(cap7, 1.0)), # 8: demand_to_capacity_7d
+                float((arrival_rate_lambda * 14.0) / max(cap14, 1.0)),# 9: demand_to_capacity_14d
+                float((arrival_rate_lambda * 30.0) / max(cap30, 1.0)),# 10: demand_to_capacity_30d
+                2026.0,                                             # 11: sched_year
+                float(month),                                       # 12: sched_month
+                float(dow),                                         # 13: sched_day_of_week
+                15.0,                                               # 14: sched_day_of_month
+                float((month - 1) // 3 + 1),                        # 15: sched_quarter
+                float((month - 1) * 4 + min(dow + 1, 4)),           # 16: sched_week_of_year
+                float(np.sin(dow_rad)),                             # 17: dow_sin
+                float(np.cos(dow_rad)),                             # 18: dow_cos
+                float(np.sin(month_rad)),                           # 19: month_sin
+                float(np.cos(month_rad)),                           # 20: month_cos
+                1.0 if dow == 0 else 0.0,                           # 21: is_monday
+                1.0 if dow == 4 else 0.0,                           # 22: is_friday
+                1.0 if dow >= 5 else 0.0,                           # 23: is_weekend
+                0.0,                                                # 24: is_month_start
+                0.0,                                                # 25: is_month_end
+            ]], dtype=np.float32)
+        elif num_expected == 12:
             # V3 Point-in-time queue features
             dow = day_of_week
             dow_rad = 2 * np.pi * dow / 7.0

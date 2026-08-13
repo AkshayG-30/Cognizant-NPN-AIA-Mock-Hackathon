@@ -98,4 +98,10 @@ class WaitPredictionService:
             offers_telehealth=1 if candidate.get("offers_telehealth") else 0,
         )
 
-        return result["predicted_wait_days"]
+        base_wait = float(result["predicted_wait_days"])
+        q_len = float(candidate.get("current_queue_length", 0))
+        backlog = float(candidate.get("active_backlog", 0))
+        # Add dynamic queue offset to reflect individual provider backlog
+        queue_offset = (q_len * 0.35) + (backlog * 0.25)
+        
+        return max(1.0, round(base_wait + queue_offset, 1))

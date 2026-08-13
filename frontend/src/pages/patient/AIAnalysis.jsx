@@ -15,6 +15,7 @@ export default function AIAnalysis() {
   const [result, setResult] = useState(null);
   const [pipelineData, setPipelineData] = useState(null);
   const [customText, setCustomText] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
   const nav = useNavigate();
 
   useEffect(() => {
@@ -50,7 +51,10 @@ export default function AIAnalysis() {
       const formData = new FormData();
       formData.append("clinical_text", textToRun);
       formData.append("urgency", "routine");
-      formData.append("zip_code", "90024");
+      if (customLocation && customLocation.trim()) {
+        formData.append("zip_code", customLocation.trim());
+        formData.append("patient_address", customLocation.trim());
+      }
       formData.append("max_distance_km", "150");
 
       const res = await api.post("/carepath/process", formData);

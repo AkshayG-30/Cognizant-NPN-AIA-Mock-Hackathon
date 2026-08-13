@@ -48,7 +48,53 @@ except Exception as _ocr_err:
     logger.warning("rapidocr_init_failed", error=str(_ocr_err))
     _ocr_engine = None
 
+LAST_CAREPATH_RESULT: Optional[dict[str, Any]] = None
+
 router = APIRouter(prefix="/carepath", tags=["CarePath"])
+
+
+def geocode_patient_location(query: str) -> Optional[tuple[float, float]]:
+    if not query or not isinstance(query, str):
+        return None
+    query_str = query.strip().lower()
+    
+    # Fast lookup dictionary for zip codes, cities, and countries
+    known = {
+        "india": (20.5937, 78.9629),
+        "mumbai": (19.0760, 72.8777),
+        "mumbai, india": (19.0760, 72.8777),
+        "delhi": (28.6139, 77.2090),
+        "delhi, india": (28.6139, 77.2090),
+        "bangalore": (12.9716, 77.5946),
+        "chennai": (13.0827, 80.2707),
+        "hyderabad": (17.3850, 78.4867),
+        "kolkata": (22.5726, 88.3639),
+        "pune": (18.5204, 73.8567),
+        "90024": (34.0664, -118.4452),
+        "90210": (34.0901, -118.4065),
+        "10001": (40.7501, -73.9996),
+        "90001": (33.9731, -118.2479),
+        "los angeles": (34.0522, -118.2437),
+        "new york": (40.7128, -74.0060),
+    }
+    
+    if query_str in known:
+        return known[query_str]
+        
+    if "india" in query_str:
+        return (20.5937, 78.9629)
+        
+    try:
+        import urllib.request, urllib.parse, json
+        url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query.strip())}&format=json&limit=1"
+        req = urllib.request.Request(url, headers={"User-Agent": "CarePathAI/1.0"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode())
+            if data and len(data) > 0:
+                return float(data[0]["lat"]), float(data[0]["lon"])
+    except Exception:
+        pass
+    return None
 
 
 @router.post("/process", summary="Unified CarePath End-to-End Pipeline")
@@ -57,8 +103,10 @@ async def process_carepath_workflow(
     clinical_text: Optional[str] = Form(None),
     specialty_override: Optional[str] = Form(None),
     urgency_override: Optional[str] = Form(None),
-    patient_lat: Optional[float] = Form(34.0522),
-    patient_lon: Optional[float] = Form(-118.2437),
+    patient_lat: Optional[float] = Form(None),
+    patient_lon: Optional[float] = Form(None),
+    patient_address: Optional[str] = Form(None),
+    zip_code: Optional[str] = Form(None),
     max_distance_km: Optional[float] = Form(100.0),
     insurance_network: Optional[str] = Form("In-Network Aetna / BlueCross"),
     top_k: Optional[int] = Form(5),
@@ -77,8 +125,44 @@ async def process_carepath_workflow(
     extracted_text = ""
     filename = ""
 
+    # Sanitize Form parameters
+    clinical_text = clinical_text if (isinstance(clinical_text, str) or (clinical_text is not None and not hasattr(clinical_text, "default"))) else None
+    specialty_override = specialty_override if (isinstance(specialty_override, str) or (specialty_override is not None and not hasattr(specialty_override, "default"))) else None
+    urgency_override = urgency_override if (isinstance(urgency_override, str) or (urgency_override is not None and not hasattr(urgency_override, "default"))) else None
+    insurance_network = str(insurance_network) if (isinstance(insurance_network, str) or (insurance_network is not None and not hasattr(insurance_network, "default"))) else "In-Network Aetna / BlueCross"
+    patient_address_str = str(patient_address) if (isinstance(patient_address, str) or (patient_address is not None and not hasattr(patient_address, "default"))) else None
+    zip_code_str = str(zip_code) if (isinstance(zip_code, str) or (zip_code is not None and not hasattr(zip_code, "default"))) else None
+
+    # Geocode address/zip code if provided
+    loc_query = patient_address_str or zip_code_str
+    if loc_query and loc_query.strip():
+        coords = geocode_patient_location(loc_query)
+        if coords:
+            patient_lat, patient_lon = coords
+            logger.info("patient_location_geocoded", query=loc_query, lat=patient_lat, lon=patient_lon)
+
+    try:
+        patient_lat = float(patient_lat) if patient_lat is not None else 34.0522
+    except Exception:
+        patient_lat = 34.0522
+
+    try:
+        patient_lon = float(patient_lon) if patient_lon is not None else -118.2437
+    except Exception:
+        patient_lon = -118.2437
+
+    try:
+        max_distance_km = float(max_distance_km)
+    except Exception:
+        max_distance_km = 100.0
+
+    try:
+        top_k = int(top_k)
+    except Exception:
+        top_k = 5
+
     # 1. DOCUMENT EXTRACTION & OCR
-    if file:
+    if file and hasattr(file, "filename") and file.filename:
         filename = file.filename or ""
         content = await file.read()
         fn_lower = filename.lower()
@@ -359,6 +443,12 @@ async def process_carepath_workflow(
             "Active in-network provider credentials",
         ]
 
+        # Compute quality score dynamically from optimizer output and capacity data
+        obj_score = rec.get("objective_score", 0.85)
+        cap_score = rec.get("capacity_score", 0.5)
+        raw_quality = (obj_score * 60) + (cap_score * 20) + max(0, (1.0 - wait_days / 30.0) * 20)
+        quality_score = max(70, min(99, int(raw_quality)))
+
         recommendation_cards.append({
             "rank": idx + 1,
             "provider_id": str(p_id),
@@ -373,7 +463,7 @@ async def process_carepath_workflow(
             "predicted_wait_days": wait_days,
             "distance_km": dist_km,
             "haversine_distance_km": dist_km,
-            "quality_score": 96 - idx,
+            "quality_score": quality_score,
             "match_score": match_score,
             "next_available": next_avail_date.strftime("%b %d, %Y"),
             "reasons": reasons,
@@ -466,6 +556,10 @@ async def process_carepath_workflow(
         "recommendations": recommendation_cards,
     }
 
+    global LAST_CAREPATH_RESULT
+    LAST_CAREPATH_RESULT = result
+    return result
+
 
 @router.post("/book", summary="Confirm & Book Recommended Specialist Appointment")
 async def book_carepath_appointment(
@@ -557,6 +651,36 @@ async def book_carepath_appointment(
 
 @router.get("/best-match", summary="Get Best Match (Backwards Compatibility)")
 async def get_best_match(db: AsyncSession = Depends(get_db)):
+    global LAST_CAREPATH_RESULT
+    if LAST_CAREPATH_RESULT and LAST_CAREPATH_RESULT.get("recommendations"):
+        recs = LAST_CAREPATH_RESULT["recommendations"]
+        top = recs[0]
+        return {
+            "empty": False,
+            "specialty": LAST_CAREPATH_RESULT.get("clinical_triage", {}).get("specialty", "SPECIALIST CARE"),
+            "confidence": LAST_CAREPATH_RESULT.get("clinical_triage", {}).get("confidence", 95),
+            "patient_location": LAST_CAREPATH_RESULT.get("patient_location"),
+            "doctor": {
+                "id": top["provider_id"],
+                "name": top["name"],
+                "hospital": top["hospital"],
+                "quality": top["quality_score"],
+                "distance_km": top["distance_km"],
+                "haversine_distance_km": top["haversine_distance_km"],
+                "latitude": top["latitude"],
+                "longitude": top["longitude"],
+                "wait_days": top["predicted_wait_days"],
+                "next_available": top["next_available"],
+                "city": top["city"],
+                "state": top["state"],
+                "osrm": top.get("osrm"),
+                "osrm_distance_km": top.get("osrm_distance_km"),
+                "osrm_duration_minutes": top.get("osrm_duration_minutes"),
+            },
+            "recommendations": recs,
+            "reasons": top.get("reasons", []),
+        }
+
     specialty = "CARDIOVASCULAR DISEASE"
     confidence = 94
     if AI_ANALYSES_DB:

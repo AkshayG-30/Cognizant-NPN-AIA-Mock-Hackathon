@@ -15,6 +15,7 @@ import { CareJourney } from "@/components/CareJourney";
 export default function UploadReports() {
   const [reports, setReports] = useState([]);
   const [form, setForm] = useState({ name: "", kind: "Blood Test", notes: "", file_name: "" });
+  const [location, setLocation] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [stepMsg, setStepMsg] = useState("");
@@ -52,7 +53,10 @@ export default function UploadReports() {
       }
       formData.append("clinical_text", form.notes || form.name || "Medical Report Ingestion");
       formData.append("urgency", "routine");
-      formData.append("zip_code", "90024");
+      if (location && location.trim()) {
+        formData.append("zip_code", location.trim());
+        formData.append("patient_address", location.trim());
+      }
       formData.append("max_distance_km", "150");
 
       setStepMsg("Running Groq LLM clinical triage & diagnostic classification...");
@@ -147,6 +151,16 @@ export default function UploadReports() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="md:col-span-2 space-y-1.5">
+            <Label htmlFor="patient_loc">Patient Address / City / Zip Code (Optional)</Label>
+            <Input
+              id="patient_loc"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Mumbai, India or 90024 or Los Angeles"
+            />
           </div>
 
           <div className="md:col-span-2 space-y-1.5">

@@ -57,6 +57,8 @@ class ModelRegistry:
         # Candidate model paths to check
         candidate_model_paths = [
             settings.resolve_path(settings.wait_model_path),
+            settings.resolve_path("../models/artifacts/v4/wait_time_lgbm_v4.txt"),
+            settings.resolve_path("../models/artifacts/v4/wait_time_lgbm_v4.lgb"),
             settings.resolve_path("../models/artifacts/v3/wait_time_lgbm_v3.txt"),
             settings.resolve_path("../models/artifacts/v3/wait_time_lgbm_v3.lgb"),
             settings.resolve_path("../models/artifacts/v1/wait_time_lgbm.txt"),
@@ -88,8 +90,9 @@ class ModelRegistry:
         # Candidate artifact search directories
         artifact_dirs = [
             model_path.parent,
-            settings.resolve_path("../models/artifacts/v1"),
+            settings.resolve_path("../models/artifacts/v4"),
             settings.resolve_path("../models/artifacts/v3"),
+            settings.resolve_path("../models/artifacts/v1"),
             settings.resolve_path("../models/artifacts"),
         ]
 

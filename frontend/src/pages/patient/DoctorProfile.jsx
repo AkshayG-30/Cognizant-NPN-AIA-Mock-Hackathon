@@ -24,25 +24,30 @@ export default function DoctorProfile() {
       const stored = localStorage.getItem("cp_carepath_result");
       if (stored) {
         const parsed = JSON.parse(stored);
+        // Match by provider_id, id, or rank/index
         const match = (parsed.recommendations || []).find(
           (r) => String(r.provider_id || r.id) === String(id)
-        );
+        ) || (parsed.doctor && String(parsed.doctor.id || parsed.doctor.provider_id) === String(id) ? parsed.doctor : null);
+
         if (match) {
           localDoc = {
-            id: match.provider_id || match.id,
+            id: match.provider_id || match.id || id,
             name: match.name || "Dr. Specialist",
             specialty: match.specialty || parsed.clinical_triage?.specialty || "Specialist",
-            hospital: match.hospital || "Medical Pavilion",
+            hospital: match.hospital || `${match.city || "Regional"} Medical Pavilion`,
             city: match.city || "Los Angeles",
             state: match.state || "CA",
             quality: match.quality_score || match.quality || 96,
             distance_km: match.distance_km || match.haversine_distance_km || 12.4,
+            haversine_distance_km: match.haversine_distance_km || match.distance_km,
+            osrm_distance_km: match.osrm_distance_km || match.osrm?.distance_km,
+            osrm_duration_minutes: match.osrm_duration_minutes || match.osrm?.duration_minutes,
             wait_days: match.predicted_wait_days || match.wait_days || 4.2,
             next_available: match.next_available || "Within 5 days",
             phone: "+1 (555) 234-8901",
             bio: `${match.name || "This specialist"} is a board-certified specialist in ${
-              match.specialty || "their field"
-            } practicing at ${match.hospital || "Medical Pavilion"}. Matched via CarePath AI clinical queue-aware routing.`,
+              match.specialty || parsed.clinical_triage?.specialty || "their field"
+            } practicing at ${match.hospital || "Medical Pavilion"}. Matched via CarePath AI V4 queue-aware routing.`,
           };
           setDoctor(localDoc);
         }
@@ -53,27 +58,32 @@ export default function DoctorProfile() {
       .get(`/doctors/${id}`)
       .then((r) => {
         if (r.data && !r.data.error) {
-          setDoctor((prev) => ({
-            ...r.data,
-            quality: prev?.quality || r.data.quality || 96,
-            distance_km: prev?.distance_km || r.data.distance_km || 12.4,
-            wait_days: prev?.wait_days || r.data.wait_days || 4.2,
-            hospital: prev?.hospital || r.data.hospital || "Medical Pavilion",
-            name: prev?.name || r.data.name || "Dr. Specialist",
-            specialty: prev?.specialty || r.data.specialty || "Specialist",
-          }));
+          setDoctor((prev) => {
+            if (prev) {
+              return {
+                ...r.data,
+                ...prev, // Keep localDoc values from V4 pipeline over static endpoint values
+                name: prev.name || r.data.name,
+                specialty: prev.specialty || r.data.specialty,
+                hospital: prev.hospital || r.data.hospital,
+                wait_days: prev.wait_days || r.data.wait_days,
+                distance_km: prev.distance_km || r.data.distance_km,
+              };
+            }
+            return r.data;
+          });
         }
       })
       .catch(() => {
         if (!localDoc) {
           setDoctor({
             id,
-            name: "Dr. Sarah Williams, MD, FACC",
-            specialty: "CARDIOVASCULAR DISEASE",
-            hospital: "Los Angeles Medical Pavilion, CA",
-            quality: 96,
-            distance_km: 12.4,
-            wait_days: 4.2,
+            name: `Dr. Specialist Physician`,
+            specialty: "Specialist Care",
+            hospital: "Regional Medical Center, CA",
+            quality: 95,
+            distance_km: 10.5,
+            wait_days: 4.5,
             phone: "+1 (555) 234-8901",
             bio: "Board-certified specialist dedicated to queue-optimized, patient-centered care and accessible referrals.",
           });

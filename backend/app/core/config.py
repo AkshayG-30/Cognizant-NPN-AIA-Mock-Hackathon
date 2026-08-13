@@ -43,9 +43,9 @@ class Settings(BaseSettings):
     osrm_base_url: str = "https://router.project-osrm.org"
 
     # ── ML Model ─────────────────────────────────────────────
-    wait_model_path: str = "../models/artifacts/wait_time_lgbm.txt"
-    wait_model_version: str = "v001"
-    feature_columns_path: str = "../models/artifacts/feature_columns.json"
+    wait_model_path: str = "../models/artifacts/v4/wait_time_lgbm_v4.txt"
+    wait_model_version: str = "v4"
+    feature_columns_path: str = "../models/artifacts/v4/v4_feature_manifest.json"
     specialty_encoder_path: str = "../models/artifacts/specialty_encoder.json"
     specialty_params_path: str = "../models/artifacts/specialty_params.json"
 

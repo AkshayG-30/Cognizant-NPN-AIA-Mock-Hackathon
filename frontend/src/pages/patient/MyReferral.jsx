@@ -51,7 +51,10 @@ export default function MyReferral() {
       }
       formData.append("clinical_text", `${form.reason}. Symptoms: ${form.symptoms}. Duration: ${form.duration}. Notes: ${form.notes}`);
       formData.append("urgency", form.urgency);
-      formData.append("zip_code", form.zip_code || "90024");
+      if (form.zip_code && form.zip_code.trim()) {
+        formData.append("zip_code", form.zip_code.trim());
+        formData.append("patient_address", form.zip_code.trim());
+      }
       formData.append("max_distance_km", "150");
 
       setStepMsg("Running Groq LLM clinical triage & specialty routing...");
