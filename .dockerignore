@@ -1,0 +1,40 @@
+# Version control & CI/CD
+.git
+.gitignore
+.github
+
+# Python environment & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.venv
+venv/
+*.egg-info/
+dist/
+build/
+
+# Environment files & secrets (CRITICAL FOR AWS SECURITY)
+.env
+.env.*
+*.pem
+*.key
+*.db
+carepath.db
+carepath_dev.db
+
+# Frontend node_modules & build artifacts
+frontend/
+node_modules/
+
+# Datasets & local temp data
+Datasets/
+storage/
+test sources/
+graphify-out/
+PROGRESS/
+
+# Keep ML model artifacts required for production
+!models/artifacts/

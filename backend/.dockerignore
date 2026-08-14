@@ -1,4 +1,5 @@
 .env
+.env.*
 __pycache__/
 *.pyc
 *.pyo
@@ -10,3 +11,5 @@ dist/
 build/
 venv/
 .venv/
+carepath.db
+carepath_dev.db

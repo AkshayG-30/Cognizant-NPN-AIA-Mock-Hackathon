@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import API_BASE_URL from "@/config/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CareJourney } from "@/components/CareJourney";
@@ -159,7 +160,7 @@ export default function BestMatch() {
       });
 
       // Automatically open downloadable appointment slip
-      window.open(`http://127.0.0.1:8000/api/v1/appointments/${apptId}/document?print=true`, "_blank");
+      window.open(`${API_BASE_URL}/appointments/${apptId}/document?print=true`, "_blank");
 
       setTimeout(() => {
         nav("/patient/appointments");

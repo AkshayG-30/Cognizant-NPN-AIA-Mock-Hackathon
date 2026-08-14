@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import API_BASE_URL from "@/config/api";
 import { Calendar, MapPin, Clock, CheckCircle2, User, Stethoscope, Plus, FileText } from "lucide-react";
 import { CareJourney } from "@/components/CareJourney";
 import { useNavigate } from "react-router-dom";
@@ -102,7 +103,7 @@ export default function Appointments({ scope = "upcoming" }) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => window.open(`http://127.0.0.1:8000/api/v1/appointments/${a.id}/document?print=true`, "_blank")}
+                  onClick={() => window.open(`${API_BASE_URL}/appointments/${a.id}/document?print=true`, "_blank")}
                   className="h-8 text-xs font-semibold text-blue-700 border-blue-200 bg-blue-50/50 hover:bg-blue-100/70"
                 >
                   <FileText className="h-3.5 w-3.5 mr-1 text-blue-600" /> Download Document
